@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-C++ IDE</title>
+    <style>
+        :root {
+            --bg-general: #252526;
+            --bg-editor: #1e1e1e;
+            --bg-activity-bar: #333333;
+            --text-main: #d4d4d4;
+            --accent-color: #007acc;
+            --error-text: #f48771;
+            --border-color: #3e3e42;
+            --bg-hover: #2a2d2e;
+            --bg-tab-active: #1e1e1e;
+            --bg-tab-inactive: #2d2d2d;
+            --font-mono: 'Consolas', 'Fira Code', 'Monaco', monospace;
+            --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--text-main);
+            background-color: var(--bg-general);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            height: 40px;
+            background-color: #333333;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-bottom: 1px solid var(--border-color);
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: var(--bg-activity-bar);
+            color: var(--text-main);
+            border: 1px solid transparent;
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--bg-hover);
+            border-color: var(--border-color);
+        }
+
+        .btn.primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background-color: #005f9e;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 40px); /* Subtract toolbar height */
+        }
+
+        /* Activity Bar */
+        .activity-bar {
+            width: 50px;
+            background-color: var(--bg-activity-bar);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .activity-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0.6;
+            font-size: 20px;
+        }
+
+        .activity-icon:hover {
+            opacity: 1;
+        }
+
+        .activity-icon.active {
+            opacity: 1;
+            border-left: 2px solid var(--accent-color);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--bg-general);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 10px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #858585;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 5px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .file-item.active {
+            background-color: #37373d;
+        }
+
+        /* Editor Area */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-editor);
+            min-width: 0; /* Prevent flex overflow */
+        }
+
+        .editor-tabs {
+            display: flex;
+            background-color: var(--bg-general);
+            height: 35px;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .editor-tab {
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-tab-active);
+            border-right: 1px solid var(--border-color);
+            border-top: 1px solid transparent;
+            font-size: 13px;
+            cursor: pointer;
+            min-width: fit-content;
+        }
+
+        .editor-tab.active {
+            border-top-color: var(--accent-color);
+        }
+
+        .editor-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        .line-numbers {
+            width: 40px;
+            background-color: var(--bg-editor);
+            color: #858585;
+            text-align: right;
+            padding: 10px 5px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.5;
+            border-right: 1px solid var(--border-color);
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .textarea-editor {
+            flex: 1;
+            background-color: transparent;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            padding: 10px;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        /* Bottom Panel */
+        .bottom-panel {
+            height: 30%;
+            background-color: var(--bg-editor);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+        }
+
+        .panel-tabs {
+            display: flex;
+            height: 35px;
+            background-color: var(--bg-general);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-tab {
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            color: #858585;
+            font-size: 11px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+        }
+
+        .panel-tab:hover {
+            color: var(--text-main);
+        }
+
+        .panel-tab.active {
+            color: var(--text-main);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        /* Scrollbars Customization */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #424242;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #4f4f4f;
+        }
+
+        /* Tables for Outputs */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 5px;
+            border-bottom: 1px solid var(--border-color);
+            color: #858585;
+            font-weight: normal;
+        }
+
+        td {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Specific Panel Contents */
+        .error-text {
+            color: var(--error-text);
+        }
+        
+        .warning-text {
+            color: #cca700;
+        }
+
+        .info-text {
+            color: #75beff;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="btn primary">▶ Ejecutar Análisis Léxico</button>
+        <button class="btn">Compilar todo</button>
+        <button class="btn">Limpiar Consola</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-container">
+        
+        <!-- Activity Bar -->
+        <div class="activity-bar">
+            <div class="activity-icon active" title="Explorador">📄</div>
+            <div class="activity-icon" title="Consola">💻</div>
+            <div class="activity-icon" title="Tabla de Símbolos">🔣</div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">Archivos de Prueba</div>
+            <ul class="file-list">
+                <li class="file-item active">📄 test_01.mc</li>
+                <li class="file-item">📄 test_02_error.mc</li>
+                <li class="file-item">📄 test_03_arrays.mc</li>
+            </ul>
+        </div>
+
+        <!-- Editor and Bottom Panel Wrapper -->
+        <div class="editor-container">
+            
+            <!-- Editor Tabs -->
+            <div class="editor-tabs">
+                <div class="editor-tab active">test_01.mc</div>
+            </div>
+
+            <!-- Code Editor Area -->
+            <div class="editor-content">
+                <div class="line-numbers"></div>
+                <textarea class="textarea-editor" spellcheck="false">int main() {
+    int x = 10;
+    float y = 3.14;
+    
+    // Un comentario
+    if (x > 5) {
+        x = x + 1;
+    }
+    
+    return 0;
+}</textarea>
+            </div>
+
+            <!-- Bottom Panel -->
+            <div class="bottom-panel">
+                <div class="panel-tabs">
+                    <div class="panel-tab active" onclick="switchPanel(event, 'tokens')">Tokens</div>
+                    <div class="panel-tab" onclick="switchPanel(event, 'symbols')">Tabla de Símbolos</div>
+                    <div class="panel-tab" onclick="switchPanel(event, 'syntax')">Árbol Sintáctico</div>
+                    <div class="panel-tab" onclick="switchPanel(event, 'problems')">Problemas / Errores</div>
+                </div>
+
+                <!-- Tokens Panel -->
+                <div id="tokens-panel" class="panel-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Línea</th>
+                                <th>Lexema</th>
+                                <th>Token</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>int</td><td>TIPO_DATO</td></tr>
+                            <tr><td>1</td><td>main</td><td>IDENTIFICADOR</td></tr>
+                            <tr><td>1</td><td>(</td><td>PARENTESIS_APERTURA</td></tr>
+                            <tr><td>1</td><td>)</td><td>PARENTESIS_CIERRE</td></tr>
+                            <tr><td>1</td><td>{</td><td>LLAVE_APERTURA</td></tr>
+                            <tr><td>2</td><td>int</td><td>TIPO_DATO</td></tr>
+                            <tr><td>2</td><td>x</td><td>IDENTIFICADOR</td></tr>
+                            <tr><td>2</td><td>=</td><td>ASIGNACION</td></tr>
+                            <tr><td>2</td><td>10</td><td>NUMERO_ENTERO</td></tr>
+                            <tr><td>2</td><td>;</td><td>PUNTO_Y_COMA</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Symbols Panel -->
+                <div id="symbols-panel" class="panel-content hidden">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Identificador</th>
+                                <th>Tipo</th>
+                                <th>Ámbito</th>
+                                <th>Posición Memoria (Sim)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>main</td><td>function</td><td>global</td><td>0x1000</td></tr>
+                            <tr><td>x</td><td>int</td><td>main</td><td>0x1004</td></tr>
+                            <tr><td>y</td><td>float</td><td>main</td><td>0x1008</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Syntax Tree Panel -->
+                <div id="syntax-panel" class="panel-content hidden">
+<pre>
+Program
+ └── FunctionDecl: main
+     ├── ReturnType: int
+     └── Body: Block
+         ├── VarDecl: x (int) = 10
+         ├── VarDecl: y (float) = 3.14
+         ├── IfStmt
+         │   ├── Condition: BinaryOp (>)
+         │   │   ├── Left: x
+         │   │   └── Right: 5
+         │   └── Then: Block
+         │       └── AssignStmt: x = x + 1
+         └── ReturnStmt: 0
+</pre>
+                </div>
+
+                <!-- Problems Panel -->
+                <div id="problems-panel" class="panel-content hidden">
+                    <div class="error-text">✖ Error Léxico [Línea 4]: Carácter no reconocido '@'.</div>
+                    <div class="error-text">✖ Error Sintáctico [Línea 6]: Se esperaba ';' después de la expresión.</div>
+                    <div class="warning-text">⚠ Advertencia [Línea 2]: Variable 'x' oculta a una declaración anterior.</div>
+                    <div class="info-text">ℹ Información: Análisis finalizado. Se encontraron 2 errores y 1 advertencia.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchPanel(event, panelId) {
+            // Ocultar todos los paneles
+            document.querySelectorAll('.panel-content').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            // Quitar clase activa de todas las pestañas
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Mostrar el panel seleccionado
+            document.getElementById(panelId + '-panel').classList.remove('hidden');
+            
+            // Poner la pestaña actual como activa
+            event.currentTarget.classList.add('active');
+        }
+
+        // Lógica básica para sincronizar números de línea con el textarea
+        const textarea = document.querySelector('.textarea-editor');
+        const lineNumbers = document.querySelector('.line-numbers');
+
+        textarea.addEventListener('input', updateLineNumbers);
+        textarea.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = textarea.scrollTop;
+        });
+
+        function updateLineNumbers() {
+            const lines = textarea.value.split('\n').length;
+            let numbersHtml = '';
+            for (let i = 1; i <= lines; i++) {
+                numbersHtml += i + '<br>';
+            }
+            lineNumbers.innerHTML = numbersHtml;
+        }
+        
+        // Inicializar los números de línea
+        updateLineNumbers();
+    </script>
+</body>
+</html>
