@@ -49,4 +49,6 @@ export interface SymbolTableEntry {
     dataType: string;
     scope: string;
     memoryPosition: string;
+    line: number;
+    column: number;
 }

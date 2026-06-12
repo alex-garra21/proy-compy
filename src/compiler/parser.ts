@@ -119,7 +119,7 @@ export class Parser {
             this.consumeDelim(')', "Se esperaba ')' después de los parámetros");
             
             // Para las funciones también registramos en la tabla de símbolos
-            this.symbolTable.insert(idToken.lexeme, `${typeToken.lexeme} function`, "global");
+            this.symbolTable.insert(idToken.lexeme, `${typeToken.lexeme} function`, idToken.line, idToken.column, "global");
 
             const body = this.parseBlock();
             children.push(body);
@@ -133,7 +133,7 @@ export class Parser {
             // Es una declaración de variable: int x = 10; o int x;
             
             // ANÁLISIS SEMÁNTICO: Registro de la declaración en la Tabla de Símbolos del ámbito actual
-            const success = this.symbolTable.insert(idToken.lexeme, typeToken.lexeme);
+            const success = this.symbolTable.insert(idToken.lexeme, typeToken.lexeme, idToken.line, idToken.column);
             if (!success) {
                 this.errors.push({
                     type: ErrorType.SEMANTIC,
@@ -227,6 +227,16 @@ export class Parser {
      */
     private parseIOStatement(): ASTNode {
         const ioToken = this.advance(); // consume 'cout' o 'cin'
+        
+        // Registro dinámico del objeto de E/S en la Tabla de Símbolos
+        this.symbolTable.insert(
+            ioToken.lexeme,
+            ioToken.lexeme === "cout" ? "ostream" : "istream",
+            ioToken.line,
+            ioToken.column,
+            "system"
+        );
+
         const children: ASTNode[] = [];
         const opLexeme = ioToken.lexeme === "cout" ? "<<" : ">>";
 
@@ -242,8 +252,16 @@ export class Parser {
             ) {
                 this.advance();
 
+                // Registro dinámico de endl en la Tabla de Símbolos
+                if (nextToken.lexeme === "endl") {
+                    this.symbolTable.insert("endl", "modifier", nextToken.line, nextToken.column, "system");
+                }
+
                 // Validación Semántica si es una variable
-                if (nextToken.type === TokenType.IDENTIFIER && nextToken.lexeme !== "endl" && nextToken.lexeme !== "std") {
+                if (
+                    nextToken.type === TokenType.IDENTIFIER && 
+                    !["endl", "std", "cout", "cin"].includes(nextToken.lexeme)
+                ) {
                     const entry = this.symbolTable.lookup(nextToken.lexeme);
                     if (!entry) {
                         this.errors.push({

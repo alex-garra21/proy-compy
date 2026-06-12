@@ -77,8 +77,12 @@ export function renderSymbolTable(entries: SymbolTableEntry[]): void {
 
     tableBody.innerHTML = "";
 
+    let index = 1;
     entries.forEach(entry => {
         const row = document.createElement("tr");
+
+        const numCell = document.createElement("td");
+        numCell.textContent = index.toString();
 
         const nameCell = document.createElement("td");
         nameCell.textContent = entry.identifier;
@@ -89,15 +93,21 @@ export function renderSymbolTable(entries: SymbolTableEntry[]): void {
         const scopeCell = document.createElement("td");
         scopeCell.textContent = entry.scope;
 
-        const memCell = document.createElement("td");
-        memCell.textContent = entry.memoryPosition;
+        const lineCell = document.createElement("td");
+        lineCell.textContent = entry.line.toString();
 
+        const colCell = document.createElement("td");
+        colCell.textContent = entry.column.toString();
+
+        row.appendChild(numCell);
         row.appendChild(nameCell);
         row.appendChild(typeCell);
         row.appendChild(scopeCell);
-        row.appendChild(memCell);
+        row.appendChild(lineCell);
+        row.appendChild(colCell);
 
         tableBody.appendChild(row);
+        index++;
     });
 }
 

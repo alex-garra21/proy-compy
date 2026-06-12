@@ -3,29 +3,10 @@ import { SymbolTableEntry } from "./types";
 export class SymbolTable {
     private scopes: Map<string, SymbolTableEntry>[] = [new Map()];
     private nextMemoryOffset: number = 0;
+    private allSymbols: SymbolTableEntry[] = [];
 
     constructor() {
-        this.initializeSystemSymbols();
-    }
-
-    /**
-     * Pre-carga identificadores del sistema de Mini-C++
-     */
-    private initializeSystemSymbols() {
-        this.insertSystemSymbol("std", "namespace");
-        this.insertSystemSymbol("cout", "ostream");
-        this.insertSystemSymbol("cin", "istream");
-        this.insertSystemSymbol("endl", "modifier");
-    }
-
-    private insertSystemSymbol(name: string, type: string) {
-        const entry: SymbolTableEntry = {
-            identifier: name,
-            dataType: type,
-            scope: "system",
-            memoryPosition: "System"
-        };
-        this.scopes[0].set(name, entry);
+        // Constructor limpio, sin símbolos pre-cargados
     }
 
     /**
@@ -48,24 +29,32 @@ export class SymbolTable {
      * Inserta una variable en el ámbito local actual.
      * Retorna false si la variable ya existe en el ámbito actual (Error de Redeclaración).
      */
-    insert(name: string, type: string, scope: string = "local"): boolean {
+    insert(name: string, type: string, line: number, column: number, scope: string = "local"): boolean {
         const currentScope = this.scopes[this.scopes.length - 1];
         if (currentScope.has(name)) {
             return false;
         }
 
-        // Generar una dirección de memoria simulada secuencial
-        const memoryPosition = `0x${(0x1000 + this.nextMemoryOffset).toString(16).toUpperCase()}`;
-        this.nextMemoryOffset += 4;
+        // Generar una dirección de memoria simulada secuencial o "System" para console IO
+        let memoryPosition = "";
+        if (scope === "system") {
+            memoryPosition = "System";
+        } else {
+            memoryPosition = `0x${(0x1000 + this.nextMemoryOffset).toString(16).toUpperCase()}`;
+            this.nextMemoryOffset += 4;
+        }
 
         const entry: SymbolTableEntry = {
             identifier: name,
             dataType: type,
             scope: this.scopes.length === 1 ? "global" : scope,
-            memoryPosition
+            memoryPosition,
+            line,
+            column
         };
 
         currentScope.set(name, entry);
+        this.allSymbols.push(entry);
         return true;
     }
 
@@ -81,22 +70,18 @@ export class SymbolTable {
     }
 
     /**
-     * Limpia la tabla de símbolos y recarga los objetos del sistema.
+     * Limpia la tabla de símbolos.
      */
     clear(): void {
         this.scopes = [new Map()];
         this.nextMemoryOffset = 0;
-        this.initializeSystemSymbols();
+        this.allSymbols = [];
     }
 
     /**
-     * Devuelve todas las entradas acumuladas en todos los ámbitos para el renderizado.
+     * Devuelve todas las entradas acumuladas históricamente para el renderizado.
      */
     getAllEntries(): SymbolTableEntry[] {
-        const all: SymbolTableEntry[] = [];
-        this.scopes.forEach(scope => {
-            all.push(...scope.values());
-        });
-        return all;
+        return this.allSymbols;
     }
 }
