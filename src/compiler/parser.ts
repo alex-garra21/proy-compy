@@ -50,15 +50,35 @@ export class Parser {
 
     /**
      * Regla Inicial: Program -> FuncDecl* (o declaraciones globales)
+     * Modificado para ignorar directivas de preprocesador y namespaces.
      */
     private parseProgram(): ASTNode {
+        // Ignorar directivas como #include, using namespace std;
+        while (!this.isAtEnd() && this.peek().type !== TokenType.EOF) {
+            const token = this.peek();
+            if (
+                token.lexeme === "#" ||
+                token.lexeme === "include" ||
+                token.lexeme === "using" ||
+                token.lexeme === "namespace" ||
+                token.lexeme === "std" ||
+                token.lexeme === ";" ||
+                token.lexeme === "<" ||
+                token.lexeme === ">" ||
+                token.lexeme === "iostream"
+            ) {
+                this.advance();
+            } else {
+                break;
+            }
+        }
+
         const children: ASTNode[] = [];
         
         while (!this.isAtEnd() && this.peek().type !== TokenType.EOF) {
             try {
                 children.push(this.parseDeclaration());
             } catch (e) {
-                // Recuperación de error simple: avanzar hasta un punto y coma para seguir compilando
                 this.synchronize();
             }
         }
@@ -97,6 +117,10 @@ export class Parser {
         if (this.matchDelim('(')) {
             // Es una declaración de función: int main() { ... }
             this.consumeDelim(')', "Se esperaba ')' después de los parámetros");
+            
+            // Para las funciones también registramos en la tabla de símbolos
+            this.symbolTable.insert(idToken.lexeme, `${typeToken.lexeme} function`, "global");
+
             const body = this.parseBlock();
             children.push(body);
             return {
@@ -108,12 +132,12 @@ export class Parser {
         } else {
             // Es una declaración de variable: int x = 10; o int x;
             
-            // ANÁLISIS SEMÁNTICO: Registro de la declaración en la Tabla de Símbolos
+            // ANÁLISIS SEMÁNTICO: Registro de la declaración en la Tabla de Símbolos del ámbito actual
             const success = this.symbolTable.insert(idToken.lexeme, typeToken.lexeme);
             if (!success) {
                 this.errors.push({
                     type: ErrorType.SEMANTIC,
-                    message: `Error Semántico: Redefinición de la variable "${idToken.lexeme}" en la misma línea/ámbito.`,
+                    message: `Error Semántico: Redefinición de la variable "${idToken.lexeme}" en el ámbito actual.`,
                     line: idToken.line,
                     column: idToken.column
                 });
@@ -141,6 +165,7 @@ export class Parser {
      * Regla: Block -> '{' Statement* '}'
      */
     private parseBlock(): ASTNode {
+        this.symbolTable.enterScope(); // <--- Entrar al nuevo ámbito local
         this.consumeDelim('{', "Se esperaba '{' al inicio del bloque");
         const children: ASTNode[] = [];
         
@@ -153,6 +178,7 @@ export class Parser {
         }
         
         this.consumeDelim('}', "Se esperaba '}' al final del bloque");
+        this.symbolTable.exitScope(); // <--- Salir del ámbito local actual
         return {
             type: "Block",
             children
@@ -160,7 +186,7 @@ export class Parser {
     }
 
     /**
-     * Regla: Statement -> AssignStmt | IfStmt | WhileStmt | ReturnStmt | Declaration
+     * Regla: Statement -> AssignStmt | IfStmt | WhileStmt | ReturnStmt | Declaration | ExpressionStmt | IOStatement
      */
     private parseStatement(): ASTNode {
         const token = this.peek();
@@ -178,7 +204,17 @@ export class Parser {
         }
         
         if (token.type === TokenType.IDENTIFIER) {
-            return this.parseAssignmentStatement();
+            if (token.lexeme === "cout" || token.lexeme === "cin") {
+                return this.parseIOStatement();
+            } else if (this.peekNext().lexeme === "=") {
+                return this.parseAssignmentStatement();
+            } else {
+                return this.parseExpressionStatement();
+            }
+        }
+
+        if (token.type === TokenType.DELIMITER && token.lexeme === "{") {
+            return this.parseBlock();
         }
 
         this.error(`Sentencia no reconocida o inválida: "${token.lexeme}"`);
@@ -186,6 +222,75 @@ export class Parser {
         return { type: "ErrorNode", children: [] };
     }
 
+    /**
+     * Flexibilizar entrada/salida: cout << ... o cin >> ...
+     */
+    private parseIOStatement(): ASTNode {
+        const ioToken = this.advance(); // consume 'cout' o 'cin'
+        const children: ASTNode[] = [];
+        const opLexeme = ioToken.lexeme === "cout" ? "<<" : ">>";
+
+        while (!this.isAtEnd() && !this.checkDelim(';')) {
+            this.consumeOp(opLexeme, `Se esperaba '${opLexeme}' en la sentencia de E/S`);
+
+            const nextToken = this.peek();
+            if (
+                nextToken.type === TokenType.NUMERIC_LITERAL ||
+                nextToken.type === TokenType.STRING_LITERAL ||
+                nextToken.type === TokenType.IDENTIFIER ||
+                (nextToken.type === TokenType.KEYWORD && nextToken.lexeme === "endl")
+            ) {
+                this.advance();
+
+                // Validación Semántica si es una variable
+                if (nextToken.type === TokenType.IDENTIFIER && nextToken.lexeme !== "endl" && nextToken.lexeme !== "std") {
+                    const entry = this.symbolTable.lookup(nextToken.lexeme);
+                    if (!entry) {
+                        this.errors.push({
+                            type: ErrorType.SEMANTIC,
+                            message: `Error Semántico: La variable "${nextToken.lexeme}" no ha sido declarada en este ámbito.`,
+                            line: nextToken.line,
+                            column: nextToken.column
+                        });
+                    }
+                }
+
+                children.push({
+                    type: nextToken.type === TokenType.IDENTIFIER ? "Identifier" : "Literal",
+                    value: nextToken.lexeme,
+                    children: [],
+                    line: nextToken.line,
+                    column: nextToken.column
+                });
+            } else {
+                this.error(`Se esperaba un valor (variable, literal o endl) en la E/S, se obtuvo: "${nextToken.lexeme}"`);
+                this.advance();
+            }
+        }
+
+        this.consumeDelim(';', "Se esperaba ';' al final de la sentencia de E/S");
+
+        return {
+            type: ioToken.lexeme === "cout" ? "OutputStatement" : "InputStatement",
+            value: ioToken.lexeme,
+            children,
+            line: ioToken.line,
+            column: ioToken.column
+        };
+    }
+
+    private parseExpressionStatement(): ASTNode {
+        const expr = this.parseExpression();
+        this.consumeDelim(';', "Se esperaba ';' al final de la sentencia");
+        return {
+            type: "ExpressionStatement",
+            children: [expr]
+        };
+    }
+
+    /**
+     * Soporte recursivo para else if encadenados
+     */
     private parseIfStatement(): ASTNode {
         const ifToken = this.consumeKeyword("if");
         this.consumeDelim('(', "Se esperaba '(' después de 'if'");
@@ -196,8 +301,12 @@ export class Parser {
         const children = [condition, thenBranch];
 
         if (this.matchKeyword("else")) {
-            const elseBranch = this.parseStatement();
-            children.push(elseBranch);
+            // Verificar si hay un 'if' anidado
+            if (this.checkKeyword("if")) {
+                children.push(this.parseIfStatement());
+            } else {
+                children.push(this.parseStatement());
+            }
         }
 
         return {
@@ -244,7 +353,7 @@ export class Parser {
     private parseAssignmentStatement(): ASTNode {
         const idToken = this.consume(TokenType.IDENTIFIER, "Se esperaba un identificador para la asignación");
         
-        // ANÁLISIS SEMÁNTICO: Validar que la variable exista en la Tabla de Símbolos
+        // ANÁLISIS SEMÁNTICO: Validar que la variable exista en la jerarquía de ámbitos
         const entry = this.symbolTable.lookup(idToken.lexeme);
         if (!entry) {
             this.errors.push({
@@ -323,7 +432,7 @@ export class Parser {
     private parseMultiplicativeExpression(): ASTNode {
         let node = this.parsePrimaryExpression();
 
-        while (this.matchOps(["*", "/", "%"])) {
+        while (this.matchOps(["*", "/", "%", "<<", ">>"])) {
             const op = this.previous().lexeme;
             const right = this.parsePrimaryExpression();
             node = {
@@ -347,7 +456,7 @@ export class Parser {
         if (token.type === TokenType.IDENTIFIER) {
             this.advance();
             
-            // ANÁLISIS SEMÁNTICO: Validar que la variable exista en la Tabla de Símbolos
+            // ANÁLISIS SEMÁNTICO: Validar que la variable exista en la jerarquía de ámbitos
             const entry = this.symbolTable.lookup(token.lexeme);
             if (!entry) {
                 this.errors.push({
@@ -365,6 +474,15 @@ export class Parser {
             const expr = this.parseExpression();
             this.consumeDelim(')', "Se esperaba ')' cerrando la expresión");
             return expr;
+        }
+
+        // Permitir namespace de C++ (por ejemplo, std :: o :: )
+        if (token.type === TokenType.DELIMITER && token.lexeme === ":") {
+            this.advance();
+            if (this.matchDelim(':')) {
+                const rightId = this.consume(TokenType.IDENTIFIER, "Se esperaba identificador después de '::'");
+                return { type: "ScopeResolution", value: `::${rightId.lexeme}`, children: [] };
+            }
         }
 
         this.error(`Se esperaba un número, identificador o cadena de texto pero se obtuvo: "${token.lexeme}"`);
@@ -463,6 +581,13 @@ export class Parser {
 
     private peek(): Token {
         return this.tokens[this.currentIdx];
+    }
+
+    private peekNext(): Token {
+        if (this.currentIdx + 1 >= this.tokens.length) {
+            return this.tokens[this.tokens.length - 1];
+        }
+        return this.tokens[this.currentIdx + 1];
     }
 
     private previous(): Token {

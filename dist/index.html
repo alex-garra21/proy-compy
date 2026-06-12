@@ -4,36 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini-C++ IDE</title>
-  <script type="module" crossorigin src="/assets/index-D1XpzXwF.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BXDkYhN-.css">
+  <script type="module" crossorigin src="/assets/index-BRKGqMSa.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DrhApWzQ.css">
 </head>
 <body>
     <!-- Toolbar -->
     <div class="toolbar">
-        <button id="btn-lex" class="btn primary">▶ Ejecutar Análisis Léxico</button>
-        <button id="btn-compile" class="btn">Compilar todo</button>
-        <button id="btn-clear" class="btn">Limpiar Consola</button>
+        <button id="btn-ejemplo1" class="btn primary">Ejemplo 1</button>
+        <button id="btn-ejemplo2" class="btn primary">Ejemplo 2</button>
+        <button id="btn-limpiar" class="btn">Limpiar Consola</button>
     </div>
 
-    <!-- Main Content Area -->
+    <!-- Main Content Area (Layout Vertical) -->
     <div class="main-container">
         
-        <!-- Activity Bar -->
-        <div class="activity-bar">
-            <div class="activity-icon active" title="Explorador">📄</div>
-            <div class="activity-icon" title="Consola">💻</div>
-            <div class="activity-icon" title="Tabla de Símbolos">🔣</div>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">Archivos de Prueba</div>
-            <ul class="file-list">
-                <li class="file-item active">📄 main.mc</li>
-            </ul>
-        </div>
-
-        <!-- Editor and Bottom Panel Wrapper -->
+        <!-- Editor Area (60% del alto) -->
         <div class="editor-container">
             <!-- Editor Tabs -->
             <div class="editor-tabs">
@@ -49,60 +34,60 @@
     return 0;
 }</textarea>
             </div>
+        </div>
 
-            <!-- Bottom Panel -->
-            <div class="bottom-panel">
-                <div class="panel-tabs">
-                    <div class="panel-tab active" data-target="tokens">Tokens</div>
-                    <div class="panel-tab" data-target="symbols">Tabla de Símbolos</div>
-                    <div class="panel-tab" data-target="syntax">Árbol Sintáctico</div>
-                    <div class="panel-tab" data-target="problems">Problemas / Errores</div>
-                </div>
+        <!-- Bottom Panel (40% del alto) -->
+        <div class="bottom-panel">
+            <div class="panel-tabs">
+                <div class="panel-tab active" data-target="tokens">Tokens</div>
+                <div class="panel-tab" data-target="symbols">Tabla de Símbolos</div>
+                <div class="panel-tab" data-target="syntax">Árbol Sintáctico</div>
+                <div class="panel-tab" data-target="problems">Problemas / Errores</div>
+            </div>
 
-                <!-- Tokens Panel -->
-                <div id="tokens-panel" class="panel-content">
-                    <table id="tokens-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Lexema</th>
-                                <th>Categoría Léxica</th>
-                                <th>Línea</th>
-                                <th>Columna</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Tokens inyectados dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Tokens Panel -->
+            <div id="tokens-panel" class="panel-content">
+                <table id="tokens-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Lexema</th>
+                            <th>Categoría Léxica</th>
+                            <th>Línea</th>
+                            <th>Columna</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Tokens inyectados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
 
-                <!-- Symbols Panel -->
-                <div id="symbols-panel" class="panel-content hidden">
-                    <table id="symbols-table">
-                        <thead>
-                            <tr>
-                                <th>Identificador</th>
-                                <th>Tipo</th>
-                                <th>Ámbito</th>
-                                <th>Posición Memoria</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Símbolos inyectados dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Symbols Panel -->
+            <div id="symbols-panel" class="panel-content hidden">
+                <table id="symbols-table">
+                    <thead>
+                        <tr>
+                            <th>Identificador</th>
+                            <th>Tipo</th>
+                            <th>Ámbito</th>
+                            <th>Posición Memoria</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Símbolos inyectados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
 
-                <!-- Syntax Tree Panel -->
-                <div id="syntax-panel" class="panel-content hidden">
-                    <pre id="syntax-tree-content"></pre>
-                </div>
+            <!-- Syntax Tree Panel -->
+            <div id="syntax-panel" class="panel-content hidden">
+                <pre id="syntax-tree-content"></pre>
+            </div>
 
-                <!-- Problems Panel -->
-                <div id="problems-panel" class="panel-content hidden">
-                    <div id="problems-content"></div>
-                </div>
+            <!-- Problems Panel -->
+            <div id="problems-panel" class="panel-content hidden">
+                <div id="problems-content"></div>
             </div>
         </div>
     </div>

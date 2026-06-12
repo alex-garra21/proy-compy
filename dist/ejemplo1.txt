@@ -1,0 +1,10 @@
+int main() {
+  float numero1 = 0.0;
+  float numero2 = 0.0;
+  float resultado = 0.0;
+
+  numero1 = 10.5;
+  numero2 = 5.0;
+  resultado = numero1 + numero2 * 5;
+  return 0;
+}

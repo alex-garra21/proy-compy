@@ -26,7 +26,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; /* Evita scroll global */
 }
 
 /* Toolbar */
@@ -38,6 +38,7 @@ body {
     padding: 0 10px;
     border-bottom: 1px solid var(--border-color);
     gap: 10px;
+    flex-shrink: 0; /* Evita que la barra superior se achique */
 }
 
 .btn {
@@ -65,98 +66,30 @@ body {
     background-color: #005f9e;
 }
 
-/* Main Container */
+/* Main Container - Ocupa todo el resto del viewport */
 .main-container {
     display: flex;
+    flex-direction: column;
     flex: 1;
-    height: calc(100vh - 40px); /* Subtract toolbar height */
+    height: calc(100vh - 40px);
+    overflow: hidden; /* Fijo, sin scroll global */
 }
 
-/* Activity Bar */
-.activity-bar {
-    width: 50px;
-    background-color: var(--bg-activity-bar);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 10px;
-    border-right: 1px solid var(--border-color);
-}
-
-.activity-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    opacity: 0.6;
-    font-size: 20px;
-}
-
-.activity-icon:hover {
-    opacity: 1;
-}
-
-.activity-icon.active {
-    opacity: 1;
-    border-left: 2px solid var(--accent-color);
-}
-
-/* Sidebar */
-.sidebar {
-    width: 250px;
-    background-color: var(--bg-general);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-}
-
-.sidebar-header {
-    padding: 10px 20px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #858585;
-}
-
-.file-list {
-    list-style: none;
-    padding: 0;
-    overflow-y: auto;
-}
-
-.file-item {
-    padding: 5px 20px;
-    cursor: pointer;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.file-item:hover {
-    background-color: var(--bg-hover);
-}
-
-.file-item.active {
-    background-color: #37373d;
-}
-
-/* Editor Area */
+/* Editor Area - Ocupa el 60% */
 .editor-container {
-    flex: 1;
+    height: 60%;
     display: flex;
     flex-direction: column;
     background-color: var(--bg-editor);
-    min-width: 0; /* Prevent flex overflow */
+    min-height: 0; /* Permite que el flex se encoja correctamente */
+    border-bottom: 1px solid var(--border-color);
 }
 
 .editor-tabs {
     display: flex;
     background-color: var(--bg-general);
     height: 35px;
-    overflow-x: auto;
+    flex-shrink: 0;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -169,7 +102,6 @@ body {
     border-top: 1px solid transparent;
     font-size: 13px;
     cursor: pointer;
-    min-width: fit-content;
 }
 
 .editor-tab.active {
@@ -180,6 +112,7 @@ body {
     flex: 1;
     display: flex;
     position: relative;
+    min-height: 0; /* Permite scroll del contenido interno */
 }
 
 .line-numbers {
@@ -193,7 +126,8 @@ body {
     line-height: 1.5;
     border-right: 1px solid var(--border-color);
     user-select: none;
-    overflow: hidden;
+    overflow: hidden; /* Controlado por scroll del editor */
+    flex-shrink: 0;
 }
 
 .textarea-editor {
@@ -208,17 +142,16 @@ body {
     resize: none;
     outline: none;
     white-space: pre;
-    overflow: auto;
+    overflow: auto; /* Scroll interno para el código */
 }
 
-/* Bottom Panel */
+/* Bottom Panel - Ocupa el 40% */
 .bottom-panel {
-    height: 30%;
+    height: 40%;
     background-color: var(--bg-editor);
-    border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    min-height: 150px;
+    min-height: 0; /* Permite scroll del contenido interno */
 }
 
 .panel-tabs {
@@ -226,6 +159,7 @@ body {
     height: 35px;
     background-color: var(--bg-general);
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .panel-tab {
@@ -251,9 +185,10 @@ body {
 .panel-content {
     flex: 1;
     padding: 10px;
-    overflow-y: auto;
+    overflow-y: auto; /* Scroll interno para tablas o texto */
     font-family: var(--font-mono);
     font-size: 13px;
+    min-height: 0;
 }
 
 /* Scrollbars Customization */
@@ -284,14 +219,17 @@ table {
 }
 
 th {
-    padding: 5px;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--border-color);
     color: #858585;
     font-weight: normal;
+    background-color: #1e1e1e;
+    position: sticky;
+    top: 0; /* Mantiene la cabecera fija al hacer scroll */
 }
 
 td {
-    padding: 5px;
+    padding: 6px 8px;
     border-bottom: 1px solid #333;
 }
 

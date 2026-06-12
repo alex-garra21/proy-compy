@@ -1,0 +1,52 @@
+int main() {
+  int opcion = 0;
+  float num1;
+  float num2;
+  float resultado;
+
+  while (opcion != 5) {
+    cout << "--- Calculadora Interactiva ---" << endl;
+    cout << "1. Sumar" << endl;
+    cout << "2. Restar" << endl;
+    cout << "3. Multiplicar" << endl;
+    cout << "4. Dividir" << endl;
+    cout << "5. Salir" << endl;
+    cout << "Seleccione una opcion: ";
+    cin >> opcion;
+
+    if (opcion == 5) {
+      cout << "Saliendo del programa..." << endl;
+    } else if (opcion >= 1) {
+      if (opcion <= 4) {
+        cout << "Ingrese el primer valor: ";
+        cin >> num1;
+        cout << "Ingrese el segundo valor: ";
+        cin >> num2;
+
+        if (opcion == 1) {
+          resultado = num1 + num2;
+          cout << "El resultado es: " << resultado << endl;
+        } else if (opcion == 2) {
+          resultado = num1 - num2;
+          cout << "El resultado es: " << resultado << endl;
+        } else if (opcion == 3) {
+          resultado = num1 * num2;
+          cout << "El resultado es: " << resultado << endl;
+        } else if (opcion == 4) {
+          if (num2 != 0) {
+            resultado = num1 / num2;
+            cout << "El resultado es: " << resultado << endl;
+          } else {
+            cout << "Error: Division por cero." << endl;
+          }
+        }
+      } else {
+        cout << "Opcion invalida." << endl;
+      }
+    } else {
+      cout << "Opcion invalida." << endl;
+    }
+  }
+
+  return 0;
+}

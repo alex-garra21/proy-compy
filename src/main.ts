@@ -15,6 +15,11 @@ const codeEditor = document.getElementById("code-editor") as HTMLTextAreaElement
 const lineNumbers = document.getElementById("line-numbers") as HTMLDivElement | null;
 const panelTabs = document.querySelectorAll(".panel-tab");
 
+// Referencias a los botones de la barra de herramientas
+const btnEjemplo1 = document.getElementById("btn-ejemplo1");
+const btnEjemplo2 = document.getElementById("btn-ejemplo2");
+const btnLimpiar = document.getElementById("btn-limpiar");
+
 // Configurar pestañas inferiores del panel
 panelTabs.forEach(tab => {
     tab.addEventListener("click", (e) => {
@@ -99,6 +104,54 @@ function handleEditorInput() {
 if (codeEditor) {
     codeEditor.addEventListener("input", handleEditorInput);
 }
+
+// --- Lógica de Carga y Limpieza (Toolbar) ---
+
+async function cargarTextoPlano(url: string): Promise<string> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error al cargar el archivo en ${url}`);
+    }
+    return await response.text();
+}
+
+btnEjemplo1?.addEventListener("click", async () => {
+    try {
+        const texto = await cargarTextoPlano("/ejemplo1.txt");
+        if (codeEditor) {
+            codeEditor.value = texto;
+            updateLineNumbers();
+            runCompilerPipeline();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+});
+
+btnEjemplo2?.addEventListener("click", async () => {
+    try {
+        const texto = await cargarTextoPlano("/ejemplo2.txt");
+        if (codeEditor) {
+            codeEditor.value = texto;
+            updateLineNumbers();
+            runCompilerPipeline();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+});
+
+btnLimpiar?.addEventListener("click", () => {
+    if (codeEditor) {
+        codeEditor.value = "";
+        updateLineNumbers();
+    }
+    symbolTable.clear();
+    renderTokens([]);
+    renderErrors([]);
+    renderSymbolTable([]);
+    renderAST(null);
+});
 
 // Inicialización de la UI
 updateLineNumbers();
