@@ -103,6 +103,25 @@ function handleEditorInput() {
 // Vincular eventos del editor
 if (codeEditor) {
     codeEditor.addEventListener("input", handleEditorInput);
+    
+    codeEditor.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+            e.preventDefault();
+            
+            const start = codeEditor.selectionStart;
+            const end = codeEditor.selectionEnd;
+            const val = codeEditor.value;
+            
+            // Inyectar 4 espacios
+            codeEditor.value = val.substring(0, start) + "    " + val.substring(end);
+            
+            // Posicionar el cursor después de los espacios inyectados
+            codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+            
+            // Disparar actualización de líneas y pipeline de compilación
+            handleEditorInput();
+        }
+    });
 }
 
 // --- Lógica de Carga y Limpieza (Toolbar) ---
