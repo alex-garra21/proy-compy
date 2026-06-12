@@ -56,7 +56,6 @@ export function renderErrors(errors: CompilerError[]): void {
     errors.forEach(err => {
         const errorDiv = document.createElement("div");
         
-        // Pinta según el tipo de error
         if (err.type === "LEXICAL") {
             errorDiv.className = "error-text";
             errorDiv.textContent = `✖ [Línea ${err.line}, Col ${err.column}] Error Léxico: ${err.message}`;
@@ -64,7 +63,7 @@ export function renderErrors(errors: CompilerError[]): void {
             errorDiv.className = "error-text";
             errorDiv.textContent = `✖ [Línea ${err.line}, Col ${err.column}] Error Sintáctico: ${err.message}`;
         } else if (err.type === "SEMANTIC") {
-            errorDiv.className = "warning-text"; // Usamos amarillo/naranja para semántico para diferenciarlos
+            errorDiv.className = "warning-text";
             errorDiv.textContent = `⚠ [Línea ${err.line}, Col ${err.column}] Error Semántico: ${err.message}`;
         }
         
@@ -102,32 +101,75 @@ export function renderSymbolTable(entries: SymbolTableEntry[]): void {
     });
 }
 
+/**
+ * Renderiza el Árbol Sintáctico Abstracto (AST) de forma gráfica interactiva en el DOM
+ */
 export function renderAST(root: ASTNode | null): void {
-    const syntaxContent = document.getElementById("syntax-tree-content");
-    if (!syntaxContent) return;
+    const container = document.getElementById("syntax-tree-content");
+    if (!container) return;
+
+    container.innerHTML = "";
 
     if (!root) {
-        syntaxContent.textContent = "No hay un AST disponible (errores de compilación o código vacío).";
+        container.textContent = "No hay un AST disponible (errores de compilación o código vacío).";
         return;
     }
 
-    // Dibujar el árbol sintáctico usando recursión y formato de ramas sutiles
-    syntaxContent.textContent = printASTTree(root, "", true);
+    const treeRoot = document.createElement("ul");
+    treeRoot.appendChild(createNodeElement(root));
+    container.appendChild(treeRoot);
 }
 
-function printASTTree(node: ASTNode, prefix: string, isLast: boolean): string {
-    let result = prefix;
+function createNodeElement(node: ASTNode): HTMLLIElement {
+    const li = document.createElement("li");
+    const card = document.createElement("div");
+    card.className = "ast-node";
     
-    // Conectores visuales estilo árbol de archivos
-    result += isLast ? "└── " : "├── ";
+    // Determinar clase de color según el tipo de nodo
+    let typeClass = "node-general";
+    const type = node.type.toLowerCase();
     
-    // Mostrar el tipo y opcionalmente el valor del nodo
-    result += node.type + (node.value !== undefined ? `: "${node.value}"` : "") + "\n";
-    
-    const newPrefix = prefix + (isLast ? "    " : "│   ");
-    for (let i = 0; i < node.children.length; i++) {
-        result += printASTTree(node.children[i], newPrefix, i === node.children.length - 1);
+    if (type.includes("program")) {
+        typeClass = "node-program";
+    } else if (type.includes("function")) {
+        typeClass = "node-function";
+    } else if (type.includes("declaration") || type.includes("variable")) {
+        typeClass = "node-variable";
+    } else if (type.includes("stmt") || type.includes("statement") || type.includes("block") || type.includes("if") || type.includes("while") || type.includes("return")) {
+        typeClass = "node-statement";
+    } else if (type.includes("expression") || type.includes("binary") || type.includes("initializer")) {
+        typeClass = "node-expression";
+    } else if (type.includes("literal")) {
+        typeClass = "node-literal";
+    } else if (type.includes("identifier")) {
+        typeClass = "node-identifier";
     }
-    
-    return result;
+    card.classList.add(typeClass);
+
+    // Tipo de nodo
+    const typeSpan = document.createElement("span");
+    typeSpan.className = "node-type";
+    typeSpan.textContent = node.type;
+    card.appendChild(typeSpan);
+
+    // Valor secundario del lexema si existe
+    if (node.value !== undefined) {
+        const valSpan = document.createElement("span");
+        valSpan.className = "node-value";
+        valSpan.textContent = `"${node.value}"`;
+        card.appendChild(valSpan);
+    }
+
+    li.appendChild(card);
+
+    // Renderizar hijos recursivamente
+    if (node.children && node.children.length > 0) {
+        const ul = document.createElement("ul");
+        node.children.forEach(child => {
+            ul.appendChild(createNodeElement(child));
+        });
+        li.appendChild(ul);
+    }
+
+    return li;
 }

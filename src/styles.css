@@ -38,7 +38,7 @@ body {
     padding: 0 10px;
     border-bottom: 1px solid var(--border-color);
     gap: 10px;
-    flex-shrink: 0; /* Evita que la barra superior se achique */
+    flex-shrink: 0;
 }
 
 .btn {
@@ -66,22 +66,22 @@ body {
     background-color: #005f9e;
 }
 
-/* Main Container - Ocupa todo el resto del viewport */
+/* Main Container */
 .main-container {
     display: flex;
     flex-direction: column;
     flex: 1;
     height: calc(100vh - 40px);
-    overflow: hidden; /* Fijo, sin scroll global */
+    overflow: hidden;
 }
 
-/* Editor Area - Ocupa el 60% */
+/* Editor Area - 60% */
 .editor-container {
     height: 60%;
     display: flex;
     flex-direction: column;
     background-color: var(--bg-editor);
-    min-height: 0; /* Permite que el flex se encoja correctamente */
+    min-height: 0;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -112,7 +112,7 @@ body {
     flex: 1;
     display: flex;
     position: relative;
-    min-height: 0; /* Permite scroll del contenido interno */
+    min-height: 0;
 }
 
 .line-numbers {
@@ -126,7 +126,7 @@ body {
     line-height: 1.5;
     border-right: 1px solid var(--border-color);
     user-select: none;
-    overflow: hidden; /* Controlado por scroll del editor */
+    overflow: hidden;
     flex-shrink: 0;
 }
 
@@ -142,16 +142,16 @@ body {
     resize: none;
     outline: none;
     white-space: pre;
-    overflow: auto; /* Scroll interno para el código */
+    overflow: auto;
 }
 
-/* Bottom Panel - Ocupa el 40% */
+/* Bottom Panel - 40% */
 .bottom-panel {
     height: 40%;
     background-color: var(--bg-editor);
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Permite scroll del contenido interno */
+    min-height: 0;
 }
 
 .panel-tabs {
@@ -185,16 +185,16 @@ body {
 .panel-content {
     flex: 1;
     padding: 10px;
-    overflow-y: auto; /* Scroll interno para tablas o texto */
-    font-family: var(--font-mono);
+    overflow: auto; /* Permite scroll del árbol o tablas */
+    font-family: var(--font-sans);
     font-size: 13px;
     min-height: 0;
 }
 
 /* Scrollbars Customization */
 ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -203,8 +203,9 @@ body {
 
 ::-webkit-scrollbar-thumb {
     background-color: #424242;
-    border: 3px solid transparent;
+    border: 2px solid transparent;
     background-clip: padding-box;
+    border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -225,7 +226,7 @@ th {
     font-weight: normal;
     background-color: #1e1e1e;
     position: sticky;
-    top: 0; /* Mantiene la cabecera fija al hacer scroll */
+    top: 0;
 }
 
 td {
@@ -251,4 +252,148 @@ td {
 
 .hidden {
     display: none;
+}
+
+/* --- Estructura Gráfica del Árbol Sintáctico (AST) --- */
+.ast-tree {
+    display: inline-block;
+    padding: 20px;
+    min-width: 100%;
+}
+
+.ast-tree ul {
+    padding-top: 20px;
+    position: relative;
+    transition: all 0.3s;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.ast-tree li {
+    text-align: center;
+    list-style-type: none;
+    position: relative;
+    padding: 20px 5px 0 5px;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Conectores horizontales */
+.ast-tree li::before, .ast-tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
+    border-top: 2px solid var(--border-color);
+    width: 50%;
+    height: 20px;
+}
+
+.ast-tree li::after {
+    right: auto;
+    left: 50%;
+    border-left: 2px solid var(--border-color);
+}
+
+/* Deshabilitar conectores en elementos únicos */
+.ast-tree li:only-child::after, .ast-tree li:only-child::before {
+    display: none;
+}
+
+.ast-tree li:only-child {
+    padding-top: 0;
+}
+
+.ast-tree li:first-child::before, .ast-tree li:last-child::after {
+    border: 0 none;
+}
+
+.ast-tree li:last-child::before {
+    border-right: 2px solid var(--border-color);
+    border-radius: 0 5px 0 0;
+}
+
+.ast-tree li:first-child::after {
+    border-radius: 5px 0 0 0;
+}
+
+/* Conector vertical del padre */
+.ast-tree ul ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 2px solid var(--border-color);
+    width: 0;
+    height: 20px;
+}
+
+/* Tarjetas o Burbujas de los Nodos */
+.ast-node {
+    background-color: #252526;
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: var(--text-main);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    min-width: 120px;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.ast-node:hover {
+    transform: scale(1.05);
+    background-color: var(--bg-hover);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+}
+
+.ast-node .node-type {
+    font-size: 12px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.ast-node .node-value {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    display: block;
+    color: #e5c07b; /* Amarillo dorado suave */
+    margin-top: 1px;
+}
+
+/* Temas de color para categorías de Nodos */
+.node-program {
+    border-left: 4px solid #569cd6; /* Azul VS Code */
+}
+
+.node-function {
+    border-left: 4px solid #4ec9b0; /* Verde Teal */
+}
+
+.node-variable {
+    border-left: 4px solid #b5cea8; /* Verde Claro */
+}
+
+.node-statement {
+    border-left: 4px solid #c586c0; /* Púrpura */
+}
+
+.node-expression {
+    border-left: 4px solid #ce9178; /* Naranja Terracota */
+}
+
+.node-literal {
+    border-left: 4px solid #dcdcaa; /* Amarillo */
+}
+
+.node-identifier {
+    border-left: 4px solid #9cdcfe; /* Azul Celeste */
+}
+
+.node-general {
+    border-left: 4px solid #858585; /* Gris */
 }
